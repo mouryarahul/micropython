@@ -58,6 +58,19 @@ RTC_HandleTypeDef RTCHandle;
 // it's a bit of a hack at the moment
 static mp_uint_t rtc_info;
 
+/* Added by Rahul Mourya on 01/12/2020  */
+// This is a hack to read RTC datetime partwise in an interrupt callback function 
+// since RTC().datetime() would allocate memory, which is prohibited.
+// This hack read RTC datetime and store it temprorily, which can be retrieve partwise subsquently.
+static volatile mp_int_t year = 15;
+static volatile mp_int_t month = 1;
+static volatile mp_int_t day = 1;
+static volatile mp_int_t weekday = RTC_WEEKDAY_THURSDAY;
+static volatile mp_int_t hours = 0;
+static volatile mp_int_t minutes = 0;
+static volatile mp_int_t seconds = 0;
+static volatile mp_int_t useconds = 0;
+
 // Note: LSI is around (32KHz), these dividers should work either way
 // ck_spre(1Hz) = RTCCLK(LSE) /(uwAsynchPrediv + 1)*(uwSynchPrediv + 1)
 // modify RTC_ASYNCH_PREDIV & RTC_SYNCH_PREDIV in board/<BN>/mpconfigport.h to change sub-second ticks
@@ -609,6 +622,70 @@ mp_obj_t pyb_rtc_datetime(size_t n_args, const mp_obj_t *args) {
     }
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pyb_rtc_datetime_obj, 1, 2, pyb_rtc_datetime);
+
+/**************************** Added by Rahul Mourya on 01/12/2020 **********************************************/
+mp_obj_t pyb_rtc_silent_read(mp_obj_t self_in) {
+    rtc_init_finalise();
+    // get date and time
+    // note: need to call get time then get date to correctly access the registers
+    RTC_DateTypeDef date;
+    RTC_TimeTypeDef time;
+    HAL_RTC_GetTime(&RTCHandle, &time, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&RTCHandle, &date, RTC_FORMAT_BIN);
+
+    year = (mp_int_t) (2000 + date.Year);
+    month = (mp_int_t) (date.Month);
+    day = (mp_int_t) (date.Date);
+    weekday = (mp_int_t) (date.WeekDay);
+    hours = (mp_int_t) (time.Hours);
+    minutes = (mp_int_t) (time.Minutes);
+    seconds = (mp_int_t) (time.Seconds);
+    useconds = (mp_int_t) (rtc_subsec_to_us(time.SubSeconds));
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_silent_read_obj, pyb_rtc_silent_read);
+
+mp_obj_t pyb_rtc_year(mp_obj_t self_in) {
+    return mp_obj_new_int(year);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_year_obj, pyb_rtc_year);
+
+mp_obj_t pyb_rtc_month(mp_obj_t self_in) {
+    return mp_obj_new_int(month);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_month_obj, pyb_rtc_month);
+
+
+mp_obj_t pyb_rtc_date(mp_obj_t self_in) {
+    return mp_obj_new_int(day);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_date_obj, pyb_rtc_date);
+
+mp_obj_t pyb_rtc_weekday(mp_obj_t self_in) {
+    return mp_obj_new_int(weekday);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_weekday_obj, pyb_rtc_weekday);
+
+mp_obj_t pyb_rtc_hours(mp_obj_t self_in) {
+    return mp_obj_new_int(hours);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_hours_obj, pyb_rtc_hours);
+
+mp_obj_t pyb_rtc_minutes(mp_obj_t self_in) {
+    return mp_obj_new_int(minutes);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_minutes_obj, pyb_rtc_minutes);
+
+mp_obj_t pyb_rtc_seconds(mp_obj_t self_in) {
+    return mp_obj_new_int(seconds);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_seconds_obj, pyb_rtc_seconds);
+
+mp_obj_t pyb_rtc_useconds(mp_obj_t self_in) {
+    return mp_obj_new_int(useconds);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_useconds_obj, pyb_rtc_useconds);
+/************************************ End ************************************/
 
 #if defined(STM32F0) || defined(STM32L0)
 #define RTC_WKUP_IRQn RTC_IRQn
