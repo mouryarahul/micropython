@@ -34,6 +34,10 @@
 
 extern __IO uint32_t uwTick;
 
+/* Added by Rahul Mourya on 01/12/2020 */
+static volatile uint32_t secTick;
+
+
 systick_dispatch_t systick_dispatch_table[SYSTICK_DISPATCH_NUM_SLOTS];
 
 void SysTick_Handler(void) {
@@ -47,6 +51,14 @@ void SysTick_Handler(void) {
     // the COUNTFLAG bit, which makes the logic in mp_hal_ticks_us
     // work properly.
     SysTick->CTRL;
+
+    /* Added by Rahul Mourya on 01/12/2020 */
+    // Increment second counter secTick every 1000 uwTick
+    const uint32_t div = 1000;
+    const uint32_t rem = 0;
+    if ((uwTick % div) == rem){
+        secTick += 1;
+    }
 
     // Dispatch to any registered handlers in a cycle
     systick_dispatch_t f = systick_dispatch_table[uw_tick & (SYSTICK_DISPATCH_NUM_SLOTS - 1)];
@@ -140,6 +152,11 @@ void systick_wait_at_least(uint32_t start_tick, uint32_t delay_ms) {
     while (!systick_has_passed(start_tick, delay_ms)) {
         __WFI(); // enter sleep mode, waiting for interrupt
     }
+}
+
+// Added by Rahul Mourya on 01/12/2020
+mp_uint_t mp_hal_ticks_sec(void) {
+    return secTick;
 }
 
 mp_uint_t mp_hal_ticks_ms(void) {

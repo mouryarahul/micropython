@@ -32,6 +32,7 @@
 MP_DECLARE_CONST_FUN_OBJ_1(mp_utime_sleep_obj);
 MP_DECLARE_CONST_FUN_OBJ_1(mp_utime_sleep_ms_obj);
 MP_DECLARE_CONST_FUN_OBJ_1(mp_utime_sleep_us_obj);
+MP_DECLARE_CONST_FUN_OBJ_0(mp_utime_ticks_sec_obj);  // Added by Rahul Mourya on 01/12/2020
 MP_DECLARE_CONST_FUN_OBJ_0(mp_utime_ticks_ms_obj);
 MP_DECLARE_CONST_FUN_OBJ_0(mp_utime_ticks_us_obj);
 MP_DECLARE_CONST_FUN_OBJ_0(mp_utime_ticks_cpu_obj);

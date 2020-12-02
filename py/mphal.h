@@ -63,6 +63,11 @@ void mp_hal_delay_ms(mp_uint_t ms);
 void mp_hal_delay_us(mp_uint_t us);
 #endif
 
+/* Added by Rahul Mourya on 01/12/2020 */
+#ifndef mp_hal_ticks_sec
+mp_uint_t mp_hal_ticks_sec(void);
+#endif
+
 #ifndef mp_hal_ticks_ms
 mp_uint_t mp_hal_ticks_ms(void);
 #endif
