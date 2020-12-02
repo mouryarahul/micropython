@@ -64,6 +64,12 @@ STATIC mp_obj_t time_sleep_us(mp_obj_t arg) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(mp_utime_sleep_us_obj, time_sleep_us);
 
+/* Added by Rahul Mourya on 01/12/2020 */
+STATIC mp_obj_t time_ticks_sec(void) {
+    return MP_OBJ_NEW_SMALL_INT(mp_hal_ticks_sec() & (MICROPY_PY_UTIME_TICKS_PERIOD - 1));
+}
+MP_DEFINE_CONST_FUN_OBJ_0(mp_utime_ticks_sec_obj, time_ticks_sec);
+
 STATIC mp_obj_t time_ticks_ms(void) {
     return MP_OBJ_NEW_SMALL_INT(mp_hal_ticks_ms() & (MICROPY_PY_UTIME_TICKS_PERIOD - 1));
 }
