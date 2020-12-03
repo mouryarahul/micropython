@@ -62,7 +62,7 @@ static mp_uint_t rtc_info;
 // This is a hack to read RTC datetime partwise in an interrupt callback function 
 // since RTC().datetime() would allocate memory, which is prohibited.
 // This hack read RTC datetime and store it temprorily, which can be retrieve partwise subsquently.
-/*
+
 static volatile mp_int_t year = 15;
 static volatile mp_int_t month = 1;
 static volatile mp_int_t day = 1;
@@ -71,7 +71,7 @@ static volatile mp_int_t hours = 0;
 static volatile mp_int_t minutes = 0;
 static volatile mp_int_t seconds = 0;
 static volatile mp_int_t useconds = 0;
-*/
+
 
 // Note: LSI is around (32KHz), these dividers should work either way
 // ck_spre(1Hz) = RTCCLK(LSE) /(uwAsynchPrediv + 1)*(uwSynchPrediv + 1)
@@ -626,7 +626,6 @@ mp_obj_t pyb_rtc_datetime(size_t n_args, const mp_obj_t *args) {
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pyb_rtc_datetime_obj, 1, 2, pyb_rtc_datetime);
 
 /**************************** Added by Rahul Mourya on 01/12/2020 *******************************/
-/*
 mp_obj_t pyb_rtc_silent_read(mp_obj_t self_in) {
     rtc_init_finalise();
     // get date and time
@@ -687,49 +686,29 @@ mp_obj_t pyb_rtc_useconds(mp_obj_t self_in) {
     return mp_obj_new_int(useconds);
 }
 MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_useconds_obj, pyb_rtc_useconds);
-*/
 
-// returns the number of seconds, as a float, since 2000-01-01
-mp_obj_t pyb_rtc_seconds(mp_obj_t self_in) {
-    mp_int_t year = 15;
-    mp_int_t month = 1;
-    mp_int_t day = 1;
-    // mp_int_t weekday = RTC_WEEKDAY_THURSDAY;
-    mp_int_t hours = 0;
-    mp_int_t minutes = 0;
-    mp_int_t seconds = 0;
-    mp_int_t useconds = 0;
+/// \function mktime()
+/// This is inverse function of datetime. It's argument is a full 8-tuple
+/// which expresses a time as per datetime. It returns an float which is
+/// the number of seconds since Jan 1, 2000.
+mp_obj_t pyb_rtc_mktime(mp_obj_t self_in, mp_obj_t tuple) {
 
-    rtc_init_finalise();
-    // get date and time
-    // note: need to call get time then get date to correctly access the registers
-    RTC_DateTypeDef date;
-    RTC_TimeTypeDef time;
-    HAL_RTC_GetTime(&RTCHandle, &time, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&RTCHandle, &date, RTC_FORMAT_BIN);
+    size_t len;
+    mp_obj_t *elem;
 
-    year = (mp_int_t) (2000 + date.Year);
-    month = (mp_int_t) (date.Month);
-    day = (mp_int_t) (date.Date);
-    // weekday = (mp_int_t) (date.WeekDay);
-    hours = (mp_int_t) (time.Hours);
-    minutes = (mp_int_t) (time.Minutes);
-    seconds = (mp_int_t) (time.Seconds);
-    useconds = (mp_int_t) (rtc_subsec_to_us(time.SubSeconds));
+    mp_obj_get_array(tuple, &len, &elem);
 
-    return
-        mp_obj_new_float((mp_float_t)(useconds/1E6)
-                            + seconds
-                            + minutes * 60
-                            + hours * 3600
-                            + (timeutils_year_day(year, month, day) - 1
-                                + ((year - 2000 + 3) / 4) // add a day each 4 years starting with 2001
-                                - ((year - 2000 + 99) / 100) // subtract a day each 100 years starting with 2001
-                                + ((year - 2000 + 399) / 400) // add a day each 400 years starting with 2001
-                                ) * 86400
-                            + (year - 2000) * 31536000);
+    // localtime generates a tuple of len 8. CPython uses 9, so we accept both.
+    if (len < 8 || len > 9) {
+        mp_raise_msg_varg(&mp_type_TypeError, MP_ERROR_TEXT("mktime needs a tuple of length 8, (%d given)"), len);
     }
-MP_DEFINE_CONST_FUN_OBJ_1(pyb_rtc_seconds_obj, pyb_rtc_seconds);
+
+    return mp_obj_new_float((mp_float_t)(mp_obj_get_float(elem[7])/1E6)
+                           + timeutils_mktime(mp_obj_get_int(elem[0]),
+                            mp_obj_get_int(elem[1]), mp_obj_get_int(elem[2]), mp_obj_get_int(elem[4]),
+                            mp_obj_get_int(elem[5]), mp_obj_get_int(elem[6])));
+}
+MP_DEFINE_CONST_FUN_OBJ_2(pyb_rtc_mktime_obj, pyb_rtc_mktime);
 /************************************ End ************************************/
 
 #if defined(STM32F0) || defined(STM32L0)
@@ -932,7 +911,6 @@ STATIC const mp_rom_map_elem_t pyb_rtc_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&pyb_rtc_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&pyb_rtc_info_obj) },
     { MP_ROM_QSTR(MP_QSTR_datetime), MP_ROM_PTR(&pyb_rtc_datetime_obj) },
-    /*
     { MP_ROM_QSTR(MP_QSTR_silent_read), MP_ROM_PTR(&pyb_rtc_silent_read_obj) },
     { MP_ROM_QSTR(MP_QSTR_year), MP_ROM_PTR(&pyb_rtc_year_obj) },
     { MP_ROM_QSTR(MP_QSTR_month), MP_ROM_PTR(&pyb_rtc_month_obj) },
@@ -940,9 +918,9 @@ STATIC const mp_rom_map_elem_t pyb_rtc_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_weekday), MP_ROM_PTR(&pyb_rtc_weekday_obj) },
     { MP_ROM_QSTR(MP_QSTR_hours), MP_ROM_PTR(&pyb_rtc_hours_obj) },
     { MP_ROM_QSTR(MP_QSTR_minutes), MP_ROM_PTR(&pyb_rtc_minutes_obj) },
+    { MP_ROM_QSTR(MP_QSTR_seconds), MP_ROM_PTR(&pyb_rtc_seconds_obj) }, 
     { MP_ROM_QSTR(MP_QSTR_useconds), MP_ROM_PTR(&pyb_rtc_useconds_obj) },
-    */
-    { MP_ROM_QSTR(MP_QSTR_seconds), MP_ROM_PTR(&pyb_rtc_seconds_obj) },
+    { MP_ROM_QSTR(MP_QSTR_mktime), MP_ROM_PTR(&pyb_rtc_mktime_obj) },
     { MP_ROM_QSTR(MP_QSTR_wakeup), MP_ROM_PTR(&pyb_rtc_wakeup_obj) },
     { MP_ROM_QSTR(MP_QSTR_calibration), MP_ROM_PTR(&pyb_rtc_calibration_obj) },
 };
