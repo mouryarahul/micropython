@@ -35,8 +35,7 @@
 extern __IO uint32_t uwTick;
 
 /* Added by Rahul Mourya on 01/12/2020 */
-static volatile uint32_t secTick;
-
+static volatile uint32_t uwTick_overflow_counter;
 
 systick_dispatch_t systick_dispatch_table[SYSTICK_DISPATCH_NUM_SLOTS];
 
@@ -44,6 +43,12 @@ void SysTick_Handler(void) {
     // Instead of calling HAL_IncTick we do the increment here of the counter.
     // This is purely for efficiency, since SysTick is called 1000 times per
     // second at the highest interrupt priority.
+
+    // uwTick counts upto 0xffffffff and then overflow to 0
+    if (uwTick == (uint32_t)(0xffffffff)){
+           uwTick_overflow_counter++;
+    }
+
     uint32_t uw_tick = uwTick + 1;
     uwTick = uw_tick;
 
@@ -52,13 +57,11 @@ void SysTick_Handler(void) {
     // work properly.
     SysTick->CTRL;
 
-    /* Added by Rahul Mourya on 01/12/2020 */
-    // Increment second counter secTick every 1000 uwTick
-    const uint32_t div = 1000;
-    const uint32_t rem = 0;
-    if ((uwTick % div) == rem){
-        secTick += 1;
+    /*
+    if (uwTick % (uint32_t)(1000) == (uint32_t)(0)){
+        secTick++;
     }
+    */
 
     // Dispatch to any registered handlers in a cycle
     systick_dispatch_t f = systick_dispatch_table[uw_tick & (SYSTICK_DISPATCH_NUM_SLOTS - 1)];
@@ -156,8 +159,25 @@ void systick_wait_at_least(uint32_t start_tick, uint32_t delay_ms) {
 
 // Added by Rahul Mourya on 01/12/2020
 mp_uint_t mp_hal_ticks_sec(void) {
+    uint32_t secTick;
+    secTick = (uint32_t)(uwTick / (uint32_t)(1000));
+    // uwTick overflow happen after it reaches 0xffffffff = 4294967295
+    secTick = uwTick_overflow_counter * (uint32_t)(4294967) + secTick;
+    
+    /* At every overflow, 295 ms are lost */
+    /*
+    if ((overflow_count > (uint32_t)(0)) && ((overflow_count % (uint32_t)(3)) == (uint32_t)(0))){
+        secTick++;
+    }
+    */
     return secTick;
 }
+
+/*
+mp_uint_t mp_hal_ticks_sec(void) {
+    return secTick;
+}
+*/
 
 mp_uint_t mp_hal_ticks_ms(void) {
     return uwTick;
@@ -166,7 +186,7 @@ mp_uint_t mp_hal_ticks_ms(void) {
 // The SysTick timer counts down at 168 MHz, so we can use that knowledge
 // to grab a microsecond counter.
 //
-// We assume that HAL_GetTickis returns milliseconds.
+// We assume that HAL_GetTicks returns milliseconds.
 mp_uint_t mp_hal_ticks_us(void) {
     mp_uint_t irq_state = disable_irq();
     uint32_t counter = SysTick->VAL;
