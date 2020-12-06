@@ -35,7 +35,10 @@
 extern __IO uint32_t uwTick;
 
 /* Added by Rahul Mourya on 01/12/2020 */
-static volatile uint32_t uwTick_overflow_counter;
+static volatile uint32_t overflow_counter;
+static volatile uint32_t secTick;
+static volatile uint32_t msTick;
+static volatile uint32_t usTick;
 
 systick_dispatch_t systick_dispatch_table[SYSTICK_DISPATCH_NUM_SLOTS];
 
@@ -46,7 +49,7 @@ void SysTick_Handler(void) {
 
     // uwTick counts upto 0xffffffff and then overflow to 0
     if (uwTick == (uint32_t)(0xffffffff)){
-           uwTick_overflow_counter++;
+           overflow_counter++;
     }
 
     uint32_t uw_tick = uwTick + 1;
@@ -56,12 +59,6 @@ void SysTick_Handler(void) {
     // the COUNTFLAG bit, which makes the logic in mp_hal_ticks_us
     // work properly.
     SysTick->CTRL;
-
-    /*
-    if (uwTick % (uint32_t)(1000) == (uint32_t)(0)){
-        secTick++;
-    }
-    */
 
     // Dispatch to any registered handlers in a cycle
     systick_dispatch_t f = systick_dispatch_table[uw_tick & (SYSTICK_DISPATCH_NUM_SLOTS - 1)];
@@ -157,28 +154,43 @@ void systick_wait_at_least(uint32_t start_tick, uint32_t delay_ms) {
     }
 }
 
-// Added by Rahul Mourya on 01/12/2020
-mp_uint_t mp_hal_ticks_sec(void) {
-    uint32_t secTick;
-    secTick = (uint32_t)(uwTick / (uint32_t)(1000));
-    // uwTick overflow happen after it reaches 0xffffffff = 4294967295
-    secTick = uwTick_overflow_counter * (uint32_t)(4294967) + secTick;
-    
-    /* At every overflow, 295 ms are lost */
-    /*
-    if ((overflow_count > (uint32_t)(0)) && ((overflow_count % (uint32_t)(3)) == (uint32_t)(0))){
-        secTick++;
+/******** Added by Rahul Mourya on 05/12/2020 ****************************/
+void mp_hal_read_ticks(void) {
+       
+    /* At every overflow, 296 ms should be added to correct secTick */
+    if (overflow_counter > (uint32_t)(0)){
+        secTick = (uint32_t)((uwTick + (uint32_t)(296*overflow_counter)) / 1000);
+    }else
+    {
+        secTick = (uint32_t)(uwTick / (uint32_t)(1000));
     }
-    */
+    // uwTick overflows after it reaches 4294967295
+    secTick = overflow_counter * (uint32_t)(4294967) + secTick;
+
+    if ((uint32_t)(uwTick / 1000) == secTick){
+        msTick = (uint32_t)(uwTick%1000);
+    }else
+    {
+        msTick = (uint32_t)((uwTick + 296*overflow_counter)%1000);
+    }
+
+    usTick = mp_hal_ticks_us();
+    usTick = (uint32_t)(usTick%1000);
+}
+
+mp_uint_t mp_hal_ticks_sec_new(void) {
     return secTick;
 }
 
-/*
-mp_uint_t mp_hal_ticks_sec(void) {
-    return secTick;
+mp_uint_t mp_hal_ticks_ms_new(void) {
+    return msTick;
 }
-*/
 
+mp_uint_t mp_hal_ticks_us_new(void) {
+    return usTick;
+}
+
+/************************************************************************/
 mp_uint_t mp_hal_ticks_ms(void) {
     return uwTick;
 }
@@ -212,5 +224,6 @@ mp_uint_t mp_hal_ticks_us(void) {
     //
     // counter / ((load + 1) / 1000) scales from the systick clock to microseconds
     // and is the same thing as (counter * 1000) / (load + 1)
+    
     return milliseconds * 1000 + (counter * 1000) / (load + 1);
 }

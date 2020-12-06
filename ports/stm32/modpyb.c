@@ -179,7 +179,11 @@ STATIC const mp_rom_map_elem_t pyb_module_globals_table[] = {
     #endif
 
     #if MICROPY_PY_PYB_LEGACY
-    { MP_ROM_QSTR(MP_QSTR_seconds), MP_ROM_PTR(&mp_utime_ticks_sec_obj) },  // Added by Rahul Mourya on 01/12/2020
+    { MP_ROM_QSTR(MP_QSTR_read_ticks), MP_ROM_PTR(&mp_utime_read_ticks_obj) },  // Added by Rahul Mourya on 01/12/2020
+    { MP_ROM_QSTR(MP_QSTR_ticks_seconds), MP_ROM_PTR(&mp_utime_ticks_seconds_obj) },
+    { MP_ROM_QSTR(MP_QSTR_ticks_millis), MP_ROM_PTR(&mp_utime_ticks_millis_obj) },
+    { MP_ROM_QSTR(MP_QSTR_ticks_micros), MP_ROM_PTR(&mp_utime_ticks_micros_obj) },
+    
     { MP_ROM_QSTR(MP_QSTR_millis), MP_ROM_PTR(&mp_utime_ticks_ms_obj) },
     { MP_ROM_QSTR(MP_QSTR_elapsed_millis), MP_ROM_PTR(&pyb_elapsed_millis_obj) },
     { MP_ROM_QSTR(MP_QSTR_micros), MP_ROM_PTR(&mp_utime_ticks_us_obj) },

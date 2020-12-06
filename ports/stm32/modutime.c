@@ -139,7 +139,12 @@ STATIC const mp_rom_map_elem_t time_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_sleep), MP_ROM_PTR(&mp_utime_sleep_obj) },
     { MP_ROM_QSTR(MP_QSTR_sleep_ms), MP_ROM_PTR(&mp_utime_sleep_ms_obj) },
     { MP_ROM_QSTR(MP_QSTR_sleep_us), MP_ROM_PTR(&mp_utime_sleep_us_obj) },
-    { MP_ROM_QSTR(MP_QSTR_ticks_sec), MP_ROM_PTR(&mp_utime_ticks_sec_obj) },  // Added by Rahul Mourya on 01/12/2020
+
+    { MP_ROM_QSTR(MP_QSTR_read_ticks), MP_ROM_PTR(&mp_utime_read_ticks_obj) },  // Added by Rahul Mourya on 01/12/2020
+    { MP_ROM_QSTR(MP_QSTR_ticks_seconds), MP_ROM_PTR(&mp_utime_ticks_seconds_obj) },
+    { MP_ROM_QSTR(MP_QSTR_ticks_millis), MP_ROM_PTR(&mp_utime_ticks_millis_obj) },
+    { MP_ROM_QSTR(MP_QSTR_ticks_micros), MP_ROM_PTR(&mp_utime_ticks_micros_obj) },
+    
     { MP_ROM_QSTR(MP_QSTR_ticks_ms), MP_ROM_PTR(&mp_utime_ticks_ms_obj) },
     { MP_ROM_QSTR(MP_QSTR_ticks_us), MP_ROM_PTR(&mp_utime_ticks_us_obj) },
     { MP_ROM_QSTR(MP_QSTR_ticks_cpu), MP_ROM_PTR(&mp_utime_ticks_cpu_obj) },

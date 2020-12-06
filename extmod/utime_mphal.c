@@ -64,11 +64,29 @@ STATIC mp_obj_t time_sleep_us(mp_obj_t arg) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(mp_utime_sleep_us_obj, time_sleep_us);
 
-/* Added by Rahul Mourya on 01/12/2020 */
-STATIC mp_obj_t time_ticks_sec(void) {
-    return MP_OBJ_NEW_SMALL_INT(mp_hal_ticks_sec() & (MICROPY_PY_UTIME_TICKS_PERIOD - 1));
+
+/***************** Added by Rahul Mourya on 01/12/2020 *************************/
+STATIC mp_obj_t time_read_ticks(void){
+    mp_hal_read_ticks();
+    return mp_const_none;
 }
-MP_DEFINE_CONST_FUN_OBJ_0(mp_utime_ticks_sec_obj, time_ticks_sec);
+MP_DEFINE_CONST_FUN_OBJ_0(mp_utime_read_ticks_obj, time_read_ticks);
+
+STATIC mp_obj_t time_ticks_seconds(void) {
+    return MP_OBJ_NEW_SMALL_INT(mp_hal_ticks_sec_new() & (MICROPY_PY_UTIME_TICKS_PERIOD - 1));
+}
+MP_DEFINE_CONST_FUN_OBJ_0(mp_utime_ticks_seconds_obj, time_ticks_seconds);
+
+STATIC mp_obj_t time_ticks_millis(void) {
+    return MP_OBJ_NEW_SMALL_INT(mp_hal_ticks_ms_new() & (MICROPY_PY_UTIME_TICKS_PERIOD - 1));
+}
+MP_DEFINE_CONST_FUN_OBJ_0(mp_utime_ticks_millis_obj, time_ticks_millis);
+
+STATIC mp_obj_t time_ticks_micros(void) {
+    return MP_OBJ_NEW_SMALL_INT(mp_hal_ticks_us_new() & (MICROPY_PY_UTIME_TICKS_PERIOD - 1));
+}
+MP_DEFINE_CONST_FUN_OBJ_0(mp_utime_ticks_micros_obj, time_ticks_micros);
+/************************************************************************************/
 
 STATIC mp_obj_t time_ticks_ms(void) {
     return MP_OBJ_NEW_SMALL_INT(mp_hal_ticks_ms() & (MICROPY_PY_UTIME_TICKS_PERIOD - 1));
